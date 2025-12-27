@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GoonFM · Live Radio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles/main.css" />
+    <link rel="icon" type="image/svg+xml" href="assets/goon-badge.svg" />
+  </head>
+  <body>
+    <div class="bg-noise"></div>
+    <header class="site-header">
+      <div class="logo">
+        <img src="assets/goon-badge.svg" alt="Goon badge" />
+        <div>
+          <p class="eyebrow">Broadcasting live</p>
+          <h1>GoonFM</h1>
+        </div>
+      </div>
+      <nav>
+        <a href="#player">Player</a>
+        <a href="#guide">Streaming guide</a>
+        <a href="#schedule">Vibes</a>
+      </nav>
+      <div class="pill">Goon mode: ON</div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="copy">
+          <p class="eyebrow">24/7 goon-approved radio</p>
+          <h2>
+            Fire up your stream,
+            <span class="accent">we'll keep the goons tuned.</span>
+          </h2>
+          <p class="lede">
+            Plug in your Icecast/SHOUTcast URL from <strong>butt</strong> and hit
+            play. The page handles live playback, volume, status, and a fallback
+            test tone so you can verify audio before you go live.
+          </p>
+          <div class="cta-row">
+            <a class="button primary" href="#player">Open the player</a>
+            <a
+              class="button ghost"
+              href="https://github.com/romansavrulin/butt"
+              target="_blank"
+              rel="noreferrer"
+              >About butt</a
+            >
+          </div>
+          <ul class="badges">
+            <li>Live-ready</li>
+            <li>Fallback test tone</li>
+            <li>Now-playing ticker</li>
+          </ul>
+        </div>
+        <div class="hero-art">
+          <div class="floating-card">
+            <p class="tiny">Now streaming</p>
+            <h3>GoonFM</h3>
+            <p class="status" id="hero-status">Disconnected</p>
+            <div class="waveform">
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <p class="meme">Certified goon meme energy</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="player-card" id="player">
+        <div class="player-header">
+          <div>
+            <p class="eyebrow">Player</p>
+            <h3>GoonFM Control Room</h3>
+          </div>
+          <div class="status-dot" id="player-status">Fallback tone</div>
+        </div>
+
+        <div class="stream-config">
+          <label for="stream-url">Live stream URL (Icecast/SHOUTcast)</label>
+          <div class="stream-input">
+            <input
+              id="stream-url"
+              name="stream-url"
+              type="url"
+              placeholder="http://localhost:8000/goonfm"
+              aria-label="Stream URL"
+            />
+            <button id="connect-btn" class="button primary">Use live stream</button>
+            <button id="fallback-btn" class="button ghost">Use fallback tone</button>
+          </div>
+          <p class="hint">
+            Drop in the mountpoint from butt (e.g. http://your-ip:8000/radio). We'll
+            handle reconnecting and show errors if the stream refuses playback.
+          </p>
+        </div>
+
+        <div class="controls">
+          <button id="play-btn" class="play button primary">Play</button>
+          <div class="time">
+            <span id="current-time">0:00</span>
+            <div class="progress"><div id="progress-bar"></div></div>
+            <span id="duration">∞</span>
+          </div>
+          <div class="volume">
+            <label for="volume-slider">Volume</label>
+            <input
+              id="volume-slider"
+              type="range"
+              min="0"
+              max="100"
+              value="80"
+              aria-label="Volume"
+            />
+          </div>
+        </div>
+
+        <div class="now-playing">
+          <div>
+            <p class="eyebrow">Now playing</p>
+            <h4 id="track-title">Goon Tone • Demo</h4>
+          </div>
+          <div class="ticker" id="ticker">
+            <span>Stay gooned. Stay tuned. Drink water.</span>
+          </div>
+        </div>
+
+        <audio id="audio" preload="none"></audio>
+      </section>
+
+      <section class="info-grid" id="guide">
+        <article>
+          <p class="eyebrow">Streaming guide</p>
+          <h3>Plug butt into GoonFM</h3>
+          <ol>
+            <li>Open butt → Settings → <strong>Server</strong>.</li>
+            <li>
+              Add an Icecast/SHOUTcast server. Use your host, port, and
+              <code>/mountpoint</code>.
+            </li>
+            <li>Hit <strong>Save</strong>, then <strong>Connect</strong>.</li>
+            <li>Paste the resulting URL above and click “Use live stream.”</li>
+            <li>Press Play. If it errors, check credentials/CORS on your server.</li>
+          </ol>
+        </article>
+        <article>
+          <p class="eyebrow">Why this works</p>
+          <h3>Browser-native playback</h3>
+          <ul class="bullets">
+            <li>HTML5 audio element with custom goon-styled controls.</li>
+            <li>Live/fallback toggle so the page never feels broken.</li>
+            <li>Volume + time display; handles Icecast/SHOUTcast streams.</li>
+            <li>Toast-style status updates for connection, errors, and stops.</li>
+          </ul>
+        </article>
+        <article>
+          <p class="eyebrow">Meme injection</p>
+          <h3>Certified goon vibes</h3>
+          <p>
+            Custom badge, neon gradients, and a ticker repeating the goon creed.
+            Swap art at <code>assets/goon-badge.svg</code> if you want to remix.
+          </p>
+        </article>
+      </section>
+
+      <section class="schedule" id="schedule">
+        <div>
+          <p class="eyebrow">Vibeboard</p>
+          <h3>Daily goon schedule</h3>
+          <p class="lede">
+            Rotate these segments or replace them with your own. Listeners will see
+            the vibe before they press play.
+          </p>
+        </div>
+        <div class="pill-grid">
+          <div class="pill-card">
+            <p>Morning</p>
+            <strong>Goonrise Lo-Fi</strong>
+            <span>08:00 — 11:00</span>
+          </div>
+          <div class="pill-card">
+            <p>Midday</p>
+            <strong>Workday Wobblers</strong>
+            <span>12:00 — 15:00</span>
+          </div>
+          <div class="pill-card">
+            <p>Evening</p>
+            <strong>Meme Dreams</strong>
+            <span>19:00 — 22:00</span>
+          </div>
+          <div class="pill-card">
+            <p>Night</p>
+            <strong>Goon After Dark</strong>
+            <span>22:00 — 02:00</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="logo">
+        <img src="assets/goon-badge.svg" alt="Goon badge" />
+        <div>
+          <h4>GoonFM</h4>
+          <p>Streaming the meme dream.</p>
+        </div>
+      </div>
+      <p class="tiny">
+        Built for your Icecast/SHOUTcast stream. Swap the badge, colors, or copy to
+        fit your station.
+      </p>
+    </footer>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="scripts/main.js" type="module"></script>
+  </body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "goonfm",
+  "version": "1.0.0",
+  "description": "Website for GoonFM radio.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "python -m http.server 4173",
+    "test": "echo \"No automated tests. Open index.html or run 'npm run dev' to verify.\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}

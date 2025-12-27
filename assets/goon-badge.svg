@@ -1,0 +1,14 @@
+<svg width="320" height="320" viewBox="0 0 320 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="320" height="320" rx="72" fill="#111119"/>
+  <circle cx="160" cy="160" r="112" fill="#5A45FF"/>
+  <circle cx="160" cy="160" r="96" fill="#FF7CE3"/>
+  <path d="M82 186C118 226 203 228 239 186" stroke="#0AFF9D" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="124" cy="146" r="18" fill="#111119"/>
+  <circle cx="196" cy="146" r="18" fill="#111119"/>
+  <path d="M126 128C126 128 120 114 99 118" stroke="#111119" stroke-width="8" stroke-linecap="round"/>
+  <path d="M194 128C194 128 200 114 221 118" stroke="#111119" stroke-width="8" stroke-linecap="round"/>
+  <path d="M108 232C140 250 180 250 212 232" stroke="#111119" stroke-width="8" stroke-linecap="round"/>
+  <path d="M88 108L96 76L124 88" stroke="#0AFF9D" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M232 108L224 76L196 88" stroke="#0AFF9D" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="50%" y="92%" text-anchor="middle" fill="#0AFF9D" font-size="42" font-family="'Changa One', 'Archivo Black', sans-serif">GOON</text>
+</svg>
