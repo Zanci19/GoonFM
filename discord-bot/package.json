@@ -1,0 +1,32 @@
+{
+  "name": "goonfm-discord-bot",
+  "version": "1.0.0",
+  "description": "Discord voice bot that streams the GoonFM radio feed 24/7 with resilient reconnects and slash-command controls.",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/index.js",
+    "deploy:commands": "node scripts/register-commands.js",
+    "test": "node scripts/self-test.js"
+  },
+  "keywords": [
+    "discord",
+    "voice",
+    "radio",
+    "bot",
+    "streaming"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@discordjs/voice": "^0.17.0",
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.5",
+    "ffmpeg-static": "^5.2.0",
+    "pino": "^9.4.0",
+    "prism-media": "^1.4.8"
+  }
+}
