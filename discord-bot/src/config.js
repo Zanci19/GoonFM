@@ -1,13 +1,7 @@
 const path = require('path');
 const dotenv = require('dotenv');
 
-const REQUIRED_KEYS = [
-  'DISCORD_TOKEN',
-  'APPLICATION_ID',
-  'GUILD_ID',
-  'VOICE_CHANNEL_ID',
-  'STREAM_URL',
-];
+const REQUIRED_KEYS = ['DISCORD_TOKEN', 'APPLICATION_ID', 'GUILD_ID', 'STREAM_URL'];
 
 function loadEnv() {
   const envPath = path.join(__dirname, '..', '.env');

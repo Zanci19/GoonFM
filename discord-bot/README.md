@@ -27,6 +27,7 @@
    APPLICATION_ID=1454423581566963910
    PUBLIC_KEY=cd655ef617b62040cdcc54b9e35cfa296c3ef6a57db6b78322f9366ef3f02143
    GUILD_ID=your-guild-id
+   # Optional: default channel for auto-join on startup. Otherwise, use /join while connected to voice.
    VOICE_CHANNEL_ID=target-voice-channel-id
    STREAM_URL=https://your-primary-stream-url
    BACKUP_STREAM_URL=https://your-backup-stream-url
@@ -60,7 +61,7 @@ The bot will log in, register commands, join the configured voice channel, and b
 - `/status` — Show the current connection state and active stream URL.
 - `/refresh` — Restart the audio pipeline with the currently selected stream.
 - `/switch url:<stream>` — Switch to the provided stream URL (primary, backup, or custom).
-- `/join` — Reconnect to the configured voice channel and resume streaming.
+- `/join` — Joins the voice channel you are currently in (or uses the default VOICE_CHANNEL_ID if set).
 - `/leave` — Disconnect from voice and stop streaming.
 - `/ping` — Quick health check.
 - `/sfxplay sound:<file>` — Autocomplete a sound from `./sfx`, play it, then resume the radio stream.

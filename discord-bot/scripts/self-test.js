@@ -5,7 +5,6 @@ const requiredEnvKeys = [
   'DISCORD_TOKEN',
   'APPLICATION_ID',
   'GUILD_ID',
-  'VOICE_CHANNEL_ID',
   'STREAM_URL',
 ];
 

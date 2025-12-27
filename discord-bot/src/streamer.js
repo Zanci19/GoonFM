@@ -26,6 +26,9 @@ class RadioStreamer {
     this.usingBackup = false;
     this.playingSfx = false;
     this.resumeStreamUrl = this.currentStreamUrl;
+    this.targetChannelId = config.voiceChannelId || null;
+    this.targetGuildId = null;
+    this.targetAdapterCreator = null;
 
     if (ffmpegPath) {
       process.env.FFMPEG_PATH = ffmpegPath;
@@ -34,7 +37,7 @@ class RadioStreamer {
     this.registerPlayerEvents();
   }
 
-  async ensureConnection() {
+  async ensureConnection(targetChannel) {
     if (this.connection) {
       if (this.connection.state.status === VoiceConnectionStatus.Ready) return;
       if (
@@ -46,7 +49,24 @@ class RadioStreamer {
       }
     }
 
-    await this.joinConfiguredChannel();
+    if (targetChannel) {
+      await this.joinChannel(targetChannel);
+      return;
+    }
+
+    if (this.targetChannelId && this.targetAdapterCreator) {
+      // Attempt to rejoin previously targeted channel
+      const channel = await this.client.channels.fetch(this.targetChannelId);
+      await this.joinChannel(channel);
+      return;
+    }
+
+    if (this.config.voiceChannelId) {
+      await this.joinConfiguredChannel();
+      return;
+    }
+
+    throw new Error('No voice channel configured; join a channel and use /join to start.');
   }
 
   registerPlayerEvents() {
@@ -87,10 +107,21 @@ class RadioStreamer {
   }
 
   async joinConfiguredChannel() {
-    const channel = await this.client.channels.fetch(this.config.voiceChannelId);
-    if (!channel || !channel.isVoiceBased()) {
-      throw new Error('Configured channel is missing or not voice-capable.');
+    if (!this.config.voiceChannelId) {
+      throw new Error('VOICE_CHANNEL_ID is not set; join a voice channel and run /join.');
     }
+    const channel = await this.client.channels.fetch(this.config.voiceChannelId);
+    await this.joinChannel(channel);
+  }
+
+  async joinChannel(channel) {
+    if (!channel || !channel.isVoiceBased()) {
+      throw new Error('Target channel is missing or not voice-capable.');
+    }
+
+    this.targetChannelId = channel.id;
+    this.targetGuildId = channel.guild.id;
+    this.targetAdapterCreator = channel.guild.voiceAdapterCreator;
 
     this.connection = joinVoiceChannel({
       channelId: channel.id,
@@ -125,8 +156,8 @@ class RadioStreamer {
     this.connection.subscribe(this.player);
   }
 
-  async start() {
-    await this.ensureConnection();
+  async start(channel = null) {
+    await this.ensureConnection(channel);
     await this.playStream(this.config.streamUrl);
   }
 

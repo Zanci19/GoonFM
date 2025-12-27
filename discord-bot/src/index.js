@@ -98,9 +98,18 @@ async function handleInteraction(interaction) {
         break;
       }
       case 'join': {
-        await streamer.start();
+        const voiceChannel = interaction.member?.voice?.channel;
+        if (!voiceChannel) {
+          await interaction.reply({
+            content: 'You need to be in a voice channel to use /join.',
+            ephemeral: true,
+          });
+          return;
+        }
+
+        await streamer.start(voiceChannel);
         await interaction.reply({
-          content: 'Rejoined the configured voice channel and resumed streaming.',
+          content: `Joined **${voiceChannel.name}** and resumed streaming.`,
           ephemeral: true,
         });
         break;
