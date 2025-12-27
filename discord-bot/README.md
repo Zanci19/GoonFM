@@ -9,6 +9,7 @@
 - **Slash commands:** `/status`, `/refresh`, `/switch`, `/join`, `/leave`, and `/ping` for quick operational control.
 - **Polished presence:** Sets a custom “Listening to …” status and structured logging via `pino`.
 - **Config-first:** `.env` powered configuration so you can swap tokens, guilds, and streams without code changes.
+- **On-demand SFX:** Drop audio files into `./sfx` and trigger them with `/sfxplay` autocomplete; the bot resumes the radio stream automatically.
 
 ## Prerequisites
 
@@ -31,6 +32,7 @@
    BACKUP_STREAM_URL=https://your-backup-stream-url
    STATUS_TEXT=GoonFM · Live 24/7
    LOG_LEVEL=info
+   SFX_DIR=./sfx
    ```
 
 2. Install dependencies:
@@ -61,6 +63,7 @@ The bot will log in, register commands, join the configured voice channel, and b
 - `/join` — Reconnect to the configured voice channel and resume streaming.
 - `/leave` — Disconnect from voice and stop streaming.
 - `/ping` — Quick health check.
+- `/sfxplay sound:<file>` — Autocomplete a sound from `./sfx`, play it, then resume the radio stream.
 
 ## Operational Notes
 
@@ -68,6 +71,7 @@ The bot will log in, register commands, join the configured voice channel, and b
 - Logging defaults to `info`; set `LOG_LEVEL=debug` for richer diagnostics.
 - If the primary stream fails repeatedly, the bot swaps to `BACKUP_STREAM_URL` when provided.
 - Presence text is controlled by `STATUS_TEXT` and shows as “Listening to …” for a polished, professional touch.
+- Sound effects live in `./sfx` (or `SFX_DIR`). Supported extensions: mp3, wav, ogg, flac, aac, m4a. Rename files to avoid spaces for easier autocomplete.
 
 ## Troubleshooting
 

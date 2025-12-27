@@ -25,6 +25,16 @@ const commandBuilders = [
   new SlashCommandBuilder()
     .setName('ping')
     .setDescription('Health check for the bot.'),
+  new SlashCommandBuilder()
+    .setName('sfxplay')
+    .setDescription('Play a sound effect from the configured SFX folder, then resume the stream.')
+    .addStringOption((option) =>
+      option
+        .setName('sound')
+        .setDescription('Sound effect filename')
+        .setRequired(true)
+        .setAutocomplete(true)
+    ),
 ];
 
 const commands = commandBuilders.map((builder) => builder.toJSON());

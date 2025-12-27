@@ -10,6 +10,7 @@ const {
 } = require('@discordjs/voice');
 const prism = require('prism-media');
 const ffmpegPath = require('ffmpeg-static');
+const fs = require('fs');
 
 class RadioStreamer {
   constructor(client, config, logger) {
@@ -23,6 +24,8 @@ class RadioStreamer {
     this.currentStreamUrl = config.streamUrl;
     this.retryCount = 0;
     this.usingBackup = false;
+    this.playingSfx = false;
+    this.resumeStreamUrl = this.currentStreamUrl;
 
     if (ffmpegPath) {
       process.env.FFMPEG_PATH = ffmpegPath;
@@ -55,13 +58,31 @@ class RadioStreamer {
     });
 
     this.player.on(AudioPlayerStatus.Idle, () => {
+      if (this.playingSfx) {
+        this.logger.info('Sound effect finished; resuming stream.');
+        this.playingSfx = false;
+        this.playStream(this.resumeStreamUrl || this.config.streamUrl).catch((error) => {
+          this.logger.error({ error }, 'Failed to resume stream after SFX.');
+          this.restartStream(true);
+        });
+        return;
+      }
+
       this.logger.warn('Audio player entered idle state; restarting stream pipeline.');
       this.restartStream();
     });
 
     this.player.on('error', (error) => {
       this.logger.error({ error, stream: this.currentStreamUrl }, 'Player error encountered.');
-      this.restartStream(true);
+      if (this.playingSfx) {
+        this.playingSfx = false;
+        this.playStream(this.resumeStreamUrl || this.config.streamUrl).catch((err) => {
+          this.logger.error({ err }, 'Failed to recover stream after SFX error.');
+          this.restartStream(true);
+        });
+      } else {
+        this.restartStream(true);
+      }
     });
   }
 
@@ -114,6 +135,7 @@ class RadioStreamer {
     await this.ensureConnection();
     const resource = await this.createResource(url);
     this.currentStreamUrl = url;
+    this.resumeStreamUrl = url;
     this.usingBackup = url === this.config.backupStreamUrl;
     this.player.play(resource);
     this.retryCount = 0;
@@ -170,6 +192,45 @@ class RadioStreamer {
     });
   }
 
+  async createFileResource(filePath) {
+    return new Promise((resolve, reject) => {
+      const ffmpeg = new prism.FFmpeg({
+        args: [
+          '-i',
+          filePath,
+          '-loglevel',
+          'warning',
+          '-f',
+          's16le',
+          '-ar',
+          '48000',
+          '-ac',
+          '2',
+        ],
+      });
+
+      const opus = new prism.opus.Encoder({ rate: 48_000, channels: 2, frameSize: 960 });
+
+      const onError = (error) => {
+        ffmpeg.destroy();
+        opus.destroy();
+        reject(error);
+      };
+
+      ffmpeg.once('error', onError);
+      opus.once('error', onError);
+
+      const audioStream = ffmpeg.pipe(opus);
+      audioStream.once('error', onError);
+
+      const resource = createAudioResource(audioStream, {
+        inputType: StreamType.Opus,
+      });
+
+      resolve(resource);
+    });
+  }
+
   async restartStream(tryBackup = false) {
     const shouldUseBackup = tryBackup && this.config.backupStreamUrl && !this.usingBackup;
 
@@ -207,6 +268,17 @@ class RadioStreamer {
     this.usingBackup = url === this.config.backupStreamUrl;
     await this.playStream(url);
     return this.currentStreamUrl;
+  }
+
+  async playSoundEffect(name, filePath) {
+    await this.ensureConnection();
+    await fs.promises.access(filePath, fs.constants.R_OK);
+
+    this.logger.info({ sound: name }, 'Playing sound effect.');
+    const resource = await this.createFileResource(filePath);
+    this.playingSfx = true;
+    this.resumeStreamUrl = this.currentStreamUrl || this.config.streamUrl;
+    this.player.play(resource);
   }
 
   async disconnect() {

@@ -30,6 +30,7 @@ function loadConfig() {
     reconnectDelayMs: Number(process.env.RECONNECT_DELAY_MS || 5000),
     maxRetries: Number(process.env.MAX_RETRIES || 5),
     startVolume: Number(process.env.START_VOLUME || 35) / 100,
+    sfxDir: process.env.SFX_DIR || path.join(__dirname, '..', 'sfx'),
   };
 
   const missing = REQUIRED_KEYS.filter((key) => !process.env[key]);

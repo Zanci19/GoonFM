@@ -6,6 +6,8 @@ const {
   REST,
   Routes,
 } = require('discord.js');
+const fs = require('fs');
+const path = require('path');
 const { loadConfig } = require('./config');
 const createLogger = require('./logger');
 const RadioStreamer = require('./streamer');
@@ -19,6 +21,19 @@ const client = new Client({
 });
 
 const streamer = new RadioStreamer(client, config, logger);
+const AUDIO_EXTENSIONS = new Set(['.mp3', '.wav', '.ogg', '.flac', '.aac', '.m4a']);
+
+async function listSoundEffects() {
+  try {
+    const files = await fs.promises.readdir(config.sfxDir);
+    return files
+      .filter((file) => AUDIO_EXTENSIONS.has(path.extname(file).toLowerCase()))
+      .sort();
+  } catch (error) {
+    logger.error({ error }, 'Failed to read SFX directory.');
+    return [];
+  }
+}
 
 async function registerCommands() {
   const rest = new REST({ version: '10' }).setToken(config.token);
@@ -30,6 +45,19 @@ async function registerCommands() {
 }
 
 async function handleInteraction(interaction) {
+  if (interaction.isAutocomplete()) {
+    if (interaction.commandName === 'sfxplay') {
+      const focused = interaction.options.getFocused() || '';
+      const sounds = await listSoundEffects();
+      const filtered = sounds
+        .filter((name) => name.toLowerCase().includes(focused.toLowerCase()))
+        .slice(0, 25)
+        .map((name) => ({ name, value: name }));
+      await interaction.respond(filtered);
+    }
+    return;
+  }
+
   if (!interaction.isChatInputCommand()) return;
 
   const name = interaction.commandName;
@@ -84,6 +112,25 @@ async function handleInteraction(interaction) {
       }
       case 'ping': {
         await interaction.reply({ content: 'Pong — bot is online.', ephemeral: true });
+        break;
+      }
+      case 'sfxplay': {
+        const sound = interaction.options.getString('sound', true);
+        const filePath = path.join(config.sfxDir, sound);
+        try {
+          await fs.promises.access(filePath, fs.constants.R_OK);
+        } catch {
+          await interaction.reply({
+            content: `Sound **${sound}** was not found or is not readable in ${config.sfxDir}.`,
+            ephemeral: true,
+          });
+          return;
+        }
+        await streamer.playSoundEffect(sound, filePath);
+        await interaction.reply({
+          content: `Playing sound effect: **${sound}**`,
+          ephemeral: true,
+        });
         break;
       }
       default:
