@@ -113,7 +113,7 @@ async function handleInteraction(interaction) {
           ephemeral: true,
         });
         break;
-      }
+    }
       case 'leave': {
         await streamer.disconnect();
         await interaction.reply({ content: 'Disconnected from voice.', ephemeral: true });
@@ -121,6 +121,27 @@ async function handleInteraction(interaction) {
       }
       case 'ping': {
         await interaction.reply({ content: 'Pong — bot is online.', ephemeral: true });
+        break;
+      }
+      case 'sfxlist': {
+        const sounds = await listSoundEffects();
+        const content =
+          sounds.length > 0
+            ? `Available sounds (${sounds.length}):\n${sounds
+                .slice(0, 25)
+                .map((s) => `• ${s}`)
+                .join('\n')}${sounds.length > 25 ? '\n…and more' : ''}`
+            : 'No sound effects found. Add files to the SFX directory.';
+        await interaction.reply({ content, ephemeral: true });
+        break;
+      }
+      case 'volume': {
+        const level = interaction.options.getInteger('level', true);
+        streamer.setVolume(level);
+        await interaction.reply({
+          content: `Volume set to **${streamer.getVolumePercent()}%** for streams and SFX.`,
+          ephemeral: true,
+        });
         break;
       }
       case 'sfxplay': {

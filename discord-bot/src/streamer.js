@@ -29,6 +29,7 @@ class RadioStreamer {
     this.targetChannelId = config.voiceChannelId || null;
     this.targetGuildId = null;
     this.targetAdapterCreator = null;
+    this.volume = Math.min(Math.max(config.startVolume || 0.35, 0), 2); // allow up to 200%
 
     if (ffmpegPath) {
       process.env.FFMPEG_PATH = ffmpegPath;
@@ -213,10 +214,11 @@ class RadioStreamer {
 
       const resource = createAudioResource(audioStream, {
         inputType: StreamType.Opus,
+        inlineVolume: true,
       });
 
       if (resource.volume) {
-        resource.volume.setVolume(Math.min(Math.max(this.config.startVolume, 0), 1));
+        resource.volume.setVolume(this.volume);
       }
 
       resolve(resource);
@@ -256,7 +258,12 @@ class RadioStreamer {
 
       const resource = createAudioResource(audioStream, {
         inputType: StreamType.Opus,
+        inlineVolume: true,
       });
+
+      if (resource.volume) {
+        resource.volume.setVolume(this.volume);
+      }
 
       resolve(resource);
     });
@@ -310,6 +317,20 @@ class RadioStreamer {
     this.playingSfx = true;
     this.resumeStreamUrl = this.currentStreamUrl || this.config.streamUrl;
     this.player.play(resource);
+  }
+
+  setVolume(percent) {
+    const normalized = Math.min(Math.max(percent / 100, 0), 2);
+    this.volume = normalized;
+    const currentResource = this.player.state.resource;
+    if (currentResource?.volume) {
+      currentResource.volume.setVolume(this.volume);
+    }
+    this.logger.info({ volumePercent: this.getVolumePercent() }, 'Playback volume updated.');
+  }
+
+  getVolumePercent() {
+    return Math.round((this.volume || 0) * 100);
   }
 
   async disconnect() {

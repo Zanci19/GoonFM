@@ -35,6 +35,20 @@ const commandBuilders = [
         .setRequired(true)
         .setAutocomplete(true)
     ),
+  new SlashCommandBuilder()
+    .setName('sfxlist')
+    .setDescription('List available sound effects.'),
+  new SlashCommandBuilder()
+    .setName('volume')
+    .setDescription('Set playback volume (for streams and SFX).')
+    .addIntegerOption((option) =>
+      option
+        .setName('level')
+        .setDescription('Volume percent (0-200)')
+        .setRequired(true)
+        .setMinValue(0)
+        .setMaxValue(200)
+    ),
 ];
 
 const commands = commandBuilders.map((builder) => builder.toJSON());
