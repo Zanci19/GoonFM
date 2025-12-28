@@ -49,6 +49,24 @@ const commandBuilders = [
         .setMinValue(0)
         .setMaxValue(200)
     ),
+  new SlashCommandBuilder()
+    .setName('streaminfo')
+    .setDescription('Show current stream, backup state, connection, and volume.'),
+  new SlashCommandBuilder()
+    .setName('streamset')
+    .setDescription('Switch to a new stream URL.')
+    .addStringOption((option) =>
+      option
+        .setName('url')
+        .setDescription('Stream URL to use as the current feed.')
+        .setRequired(true)
+    ),
+  new SlashCommandBuilder()
+    .setName('streamprimary')
+    .setDescription('Switch back to the primary stream URL from config.'),
+  new SlashCommandBuilder()
+    .setName('streambackup')
+    .setDescription('Switch to the configured backup stream URL.'),
 ];
 
 const commands = commandBuilders.map((builder) => builder.toJSON());

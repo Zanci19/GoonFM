@@ -68,6 +68,10 @@ The bot will log in, register commands, join the configured voice channel, and b
 - `/sfxplay sound:<file>` — Autocomplete a sound from `./sfx`, play it, then resume the radio stream.
 - `/sfxlist` — Show available sound effects in the SFX directory.
 - `/volume level:<0-200>` — Set playback volume (applies to stream and SFX).
+- `/streaminfo` — View stream URL, backup status, connection state, and volume.
+- `/streamset url:<stream>` — Switch to a custom stream URL.
+- `/streamprimary` — Switch back to the primary configured stream URL.
+- `/streambackup` — Switch to the configured backup stream URL.
 
 ## Operational Notes
 

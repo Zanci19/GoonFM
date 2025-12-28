@@ -163,6 +163,65 @@ async function handleInteraction(interaction) {
         });
         break;
       }
+      case 'streaminfo': {
+        const status = streamer.getStatus();
+        const volume = streamer.getVolumePercent();
+        const message = [
+          `Voice: **${status.connectionState}**`,
+          `Player: **${status.playerState}**`,
+          `Stream: ${status.stream}`,
+          status.usingBackup ? 'Using backup feed.' : 'Using primary feed.',
+          `Volume: ${volume}%`,
+        ].join('\n');
+        await interaction.reply({ content: message, ephemeral: true });
+        break;
+      }
+      case 'streamset': {
+        const url = interaction.options.getString('url', true);
+        if (!/^https?:\/\//i.test(url)) {
+          await interaction.reply({
+            content: 'Please provide a valid http(s) stream URL.',
+            ephemeral: true,
+          });
+          return;
+        }
+        await streamer.switchStream(url);
+        await interaction.reply({
+          content: `Switched stream to:\n${url}`,
+          ephemeral: true,
+        });
+        break;
+      }
+      case 'streamprimary': {
+        if (!config.streamUrl) {
+          await interaction.reply({
+            content: 'Primary stream URL is not configured.',
+            ephemeral: true,
+          });
+          return;
+        }
+        await streamer.switchStream(config.streamUrl);
+        await interaction.reply({
+          content: 'Switched to primary stream URL from config.',
+          ephemeral: true,
+        });
+        break;
+      }
+      case 'streambackup': {
+        if (!config.backupStreamUrl) {
+          await interaction.reply({
+            content: 'Backup stream URL is not configured.',
+            ephemeral: true,
+          });
+          return;
+        }
+        await streamer.switchStream(config.backupStreamUrl);
+        await interaction.reply({
+          content: 'Switched to backup stream URL from config.',
+          ephemeral: true,
+        });
+        break;
+      }
       default:
         await interaction.reply({ content: 'Command not recognized.', ephemeral: true });
     }
