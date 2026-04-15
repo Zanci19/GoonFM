@@ -1,180 +1,167 @@
-const audio = document.getElementById("audio");
-const playBtn = document.getElementById("play-btn");
-const volumeSlider = document.getElementById("volume-slider");
-const progressBar = document.getElementById("progress-bar");
-const currentTimeEl = document.getElementById("current-time");
-const durationEl = document.getElementById("duration");
-const statusDot = document.getElementById("player-status");
-const heroStatus = document.getElementById("hero-status");
-const streamInput = document.getElementById("stream-url");
-const connectBtn = document.getElementById("connect-btn");
-const fallbackBtn = document.getElementById("fallback-btn");
-const toastEl = document.getElementById("toast");
-const ticker = document.getElementById("ticker");
-const trackTitle = document.getElementById("track-title");
+const playToggle = document.getElementById("play-toggle");
+const audio = document.getElementById("radio");
+const canvas = document.getElementById("spectrometer");
+const ctx = canvas.getContext("2d");
 
-const fallbackStream = "assets/goon-tone.wav";
-let liveStream = "";
-let usingLive = false;
-let tickerInterval;
+const STREAM_URL =
+  "https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3?filename=dreams-110734.mp3";
 
-const playlist = [
-  "Goon Anthem (Demo Loop)",
-  "Meme Machine Rework",
-  "Wobble Wub (Goon Edit)",
-  "Lo-Fi Goonrise",
-  "After Dark Drift",
-];
+let audioContext;
+let analyser;
+let dataArray;
+let sourceNode;
+let animationId;
 
-const tickers = [
-  "Stay gooned. Stay tuned. Drink water.",
-  "Tip: paste your Icecast URL and hit “Use live stream.”",
-  "If playback fails, check CORS on your stream server.",
-  "GoonFM is browser-native — no installs needed.",
-  "Fallback tone keeps the vibe alive while you prep.",
-];
+const fallbackOscillators = [];
+let fallbackNoise;
 
-function showToast(message) {
-  toastEl.textContent = message;
-  toastEl.classList.add("show");
-  setTimeout(() => toastEl.classList.remove("show"), 2400);
-}
-
-function setStatus(text, color = "") {
-  statusDot.textContent = text;
-  heroStatus.textContent = text;
-  if (color) {
-    statusDot.style.background = color;
-  }
-}
-
-function formatTime(seconds) {
-  if (!isFinite(seconds)) return "∞";
-  const m = Math.floor(seconds / 60)
-    .toString()
-    .padStart(1, "0");
-  const s = Math.floor(seconds % 60)
-    .toString()
-    .padStart(2, "0");
-  return `${m}:${s}`;
-}
-
-function setTicker(text) {
-  ticker.innerHTML = `<span>${text} • ${text}</span>`;
-}
-
-function rotatePlaylist() {
-  let i = 0;
-  setTicker(tickers[i % tickers.length]);
-  tickerInterval = setInterval(() => {
-    i = (i + 1) % tickers.length;
-    setTicker(tickers[i]);
-    trackTitle.textContent = playlist[i % playlist.length];
-  }, 8000);
-}
-
-function setAudioSource(src, label) {
-  audio.pause();
-  audio.src = src;
-  audio.load();
-  audio.play().catch(() => {
-    setStatus("Ready", "rgba(255,255,255,0.08)");
-  });
-  setStatus(label, usingLive ? "rgba(10,255,157,0.2)" : "rgba(255,255,255,0.08)");
-}
-
-function connectLive() {
-  const value = streamInput.value.trim();
-  if (!value) {
-    showToast("Enter a stream URL first.");
+function setupAnalyser() {
+  if (audioContext) {
     return;
   }
-  liveStream = value;
-  usingLive = true;
-  setAudioSource(liveStream, "Connecting…");
-  showToast("Connecting to live stream…");
+
+  audioContext = new AudioContext();
+  analyser = audioContext.createAnalyser();
+  analyser.fftSize = 512;
+  analyser.smoothingTimeConstant = 0.82;
+
+  dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+  sourceNode = audioContext.createMediaElementSource(audio);
+  sourceNode.connect(analyser);
+  analyser.connect(audioContext.destination);
 }
 
-function useFallback() {
-  usingLive = false;
-  setAudioSource(fallbackStream, "Fallback tone");
-  showToast("Fallback tone loaded.");
-}
+function drawSpectrum() {
+  const width = canvas.width;
+  const height = canvas.height;
 
-function togglePlay() {
-  if (!audio.src) {
-    useFallback();
+  analyser.getByteFrequencyData(dataArray);
+  ctx.clearRect(0, 0, width, height);
+
+  const barCount = 20;
+  const bucketSize = Math.floor(dataArray.length / barCount);
+  const barWidth = 9;
+  const gap = 10;
+  const totalBarsWidth = barCount * barWidth + (barCount - 1) * gap;
+  const startX = (width - totalBarsWidth) / 2;
+
+  for (let i = 0; i < barCount; i += 1) {
+    let sum = 0;
+
+    for (let j = 0; j < bucketSize; j += 1) {
+      sum += dataArray[i * bucketSize + j];
+    }
+
+    const avg = sum / bucketSize;
+    const normalized = Math.max(0.08, avg / 255);
+    const barHeight = Math.max(8, normalized * (height - 8));
+    const x = startX + i * (barWidth + gap);
+    const y = height - barHeight;
+    const radius = Math.min(6, barWidth / 2);
+
+    ctx.fillStyle = "#1b1c22";
+    ctx.beginPath();
+    ctx.roundRect(x, y, barWidth, barHeight, radius);
+    ctx.fill();
   }
 
-  if (audio.paused) {
-    audio
-      .play()
-      .then(() => {
-        playBtn.textContent = "Pause";
-        setStatus(usingLive ? "Live" : "Fallback tone", usingLive ? "rgba(10,255,157,0.2)" : "");
-      })
-      .catch((err) => {
-        console.error("Playback failed", err);
-        showToast("Playback blocked — click again to allow audio.");
-      });
-  } else {
+  animationId = requestAnimationFrame(drawSpectrum);
+}
+
+function stopFallback() {
+  fallbackOscillators.forEach((osc) => {
+    try {
+      osc.stop();
+    } catch {
+      // noop
+    }
+    osc.disconnect();
+  });
+  fallbackOscillators.length = 0;
+
+  if (fallbackNoise) {
+    fallbackNoise.stop();
+    fallbackNoise.disconnect();
+    fallbackNoise = null;
+  }
+}
+
+function startFallbackSynth() {
+  stopFallback();
+
+  const freqs = [110, 220, 330];
+  freqs.forEach((freq) => {
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    gain.gain.value = 0.06;
+
+    osc.connect(gain);
+    gain.connect(analyser);
+    osc.start();
+    fallbackOscillators.push(osc);
+  });
+
+  const noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 2, audioContext.sampleRate);
+  const channel = noiseBuffer.getChannelData(0);
+  for (let i = 0; i < channel.length; i += 1) {
+    channel[i] = (Math.random() * 2 - 1) * 0.2;
+  }
+
+  const noise = audioContext.createBufferSource();
+  noise.buffer = noiseBuffer;
+  noise.loop = true;
+
+  const noiseFilter = audioContext.createBiquadFilter();
+  noiseFilter.type = "highpass";
+  noiseFilter.frequency.value = 900;
+
+  const noiseGain = audioContext.createGain();
+  noiseGain.gain.value = 0.05;
+
+  noise.connect(noiseFilter);
+  noiseFilter.connect(noiseGain);
+  noiseGain.connect(analyser);
+  noise.start();
+  fallbackNoise = noise;
+}
+
+async function togglePlayback() {
+  setupAnalyser();
+
+  if (audioContext.state === "suspended") {
+    await audioContext.resume();
+  }
+
+  if (!animationId) {
+    drawSpectrum();
+  }
+
+  if (playToggle.classList.contains("is-playing")) {
     audio.pause();
-    playBtn.textContent = "Play";
-    setStatus("Paused");
-  }
-}
-
-function setVolume(value) {
-  audio.volume = value / 100;
-}
-
-function updateProgress() {
-  if (!audio.duration) return;
-  if (!isFinite(audio.duration)) {
-    progressBar.style.width = "0%";
-    currentTimeEl.textContent = formatTime(audio.currentTime);
-    durationEl.textContent = "∞";
+    stopFallback();
+    playToggle.classList.remove("is-playing");
     return;
   }
-  const percent = (audio.currentTime / audio.duration) * 100;
-  progressBar.style.width = `${percent}%`;
-  currentTimeEl.textContent = formatTime(audio.currentTime);
-  durationEl.textContent = formatTime(audio.duration);
+
+  audio.src = STREAM_URL;
+
+  try {
+    await audio.play();
+  } catch {
+    startFallbackSynth();
+  }
+
+  playToggle.classList.add("is-playing");
 }
 
-function attachEvents() {
-  playBtn.addEventListener("click", togglePlay);
-  connectBtn.addEventListener("click", connectLive);
-  fallbackBtn.addEventListener("click", useFallback);
-  volumeSlider.addEventListener("input", (e) => setVolume(Number(e.target.value)));
+audio.addEventListener("error", () => {
+  if (audioContext) {
+    startFallbackSynth();
+  }
+});
 
-  audio.addEventListener("timeupdate", updateProgress);
-  audio.addEventListener("loadedmetadata", () => {
-    durationEl.textContent = formatTime(audio.duration);
-  });
-
-  audio.addEventListener("playing", () => {
-    playBtn.textContent = "Pause";
-    setStatus(usingLive ? "Live" : "Fallback tone", usingLive ? "rgba(10,255,157,0.2)" : "");
-  });
-
-  audio.addEventListener("pause", () => {
-    playBtn.textContent = "Play";
-    setStatus("Paused");
-  });
-
-  audio.addEventListener("error", () => {
-    setStatus("Playback error", "rgba(255,124,227,0.25)");
-    showToast("Stream failed — check URL/CORS. Reverting to fallback.");
-    useFallback();
-  });
-}
-
-function init() {
-  setVolume(Number(volumeSlider.value));
-  useFallback();
-  rotatePlaylist();
-  attachEvents();
-}
-
-init();
+playToggle.addEventListener("click", togglePlayback);
